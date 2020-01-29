@@ -45,6 +45,8 @@ char ssid[] = "YourWiFiSSID";
 char pass[] = "YourWiFiPassword";
 
 
+int count = 0;
+bool Connected2Blynk = false;
 // This function will be called every time Slider Widget
 // in Blynk app writes values to the Virtual Pin V1
 BLYNK_WRITE(V1)
@@ -91,7 +93,30 @@ BLYNK_WRITE(V4)
      digitalWrite(Relay4, HIGH);
   }
 }
+int digitalReadOutputPin(uint8_t pin)
+{
+ uint8_t bit = digitalPinToBitMask(pin);
+ uint8_t port = digitalPinToPort(pin);
+ if (port == NOT_A_PIN)
+   return LOW;
 
+ return (*portOutputRegister(port) & bit) ? HIGH : LOW;
+}
+
+void CheckConnection(){
+  if (count>5) {
+    Serial.println("restart");
+    ESP.restart();
+  } else {
+    Connected2Blynk = Blynk.connected();
+    if(!Connected2Blynk){
+      count++;
+      Serial.println("Not connected to Blynk server"); 
+    } else {
+      count = 0;
+    }
+  }
+}
 
 void setup()
 {
@@ -117,6 +142,7 @@ void setup()
   Blynk.virtualWrite(V2, !digitalRead(Relay2));
   Blynk.virtualWrite(V3, !digitalRead(Relay3));
   Blynk.virtualWrite(V4, !digitalRead(Relay4));
+  timer.setInterval(4000L, CheckConnection); // check if still connected every 11 seconds 
 }
 
 void loop()
